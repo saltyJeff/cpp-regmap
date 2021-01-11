@@ -31,6 +31,10 @@ TEST_CASE("Memoization occurs") {
 	uint8_t tmp;
 	testMap.read<ONE_REG>(tmp);
 	CHECK(bus.readAccesses - startReads == 1);
+	testMap.read<ONE_REG>(tmp);
+	CHECK(bus.readAccesses - startReads == 1);
+	testMap.write<LOW_BIT>(5);
+	CHECK(bus.readAccesses - startReads == 1);
 }
 
 TEST_SUITE_END();

@@ -17,5 +17,10 @@ the `regmap` CMake library.
 * Abuse of `constexpr` means most of the code is compiled out
 * Fluent-ish code
 
-## Example
-*TODO*
+## Guide
+See the [writeup](guide.md)
+
+## Notes on design
+The library is designed to leave as small of a memory footprint as possible. Most-everything is
+set up as a template, which translates to larger binaries because they have to
+be instantiated on each specialization.

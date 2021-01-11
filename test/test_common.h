@@ -5,18 +5,17 @@
 using namespace regmap;
 
 /* Define test registers */
-using ZERO_REG = Register<0, uint8_t>;
-using ONE_REG = Register<1, uint8_t>;
-using WORD_REG = Register<0x10, uint16_t>;
+DECLR_BYTE(ZERO_REG, 0)
+DECLR_BYTE(ONE_REG, 1)
+DECLR_REG(WORD_REG, 0x10, uint16_t)
 
 /* Define test register masks */
-using WORD_BYTE_H = RegMask<WORD_REG, 15, 8>;
-using WORD_BYTE_L = RegMask<WORD_REG, 7, 0>;
-
-using LOW_NIBBLE = RegMask<ZERO_REG, 3, 0>;
-using MID_NIBBLE = RegMask<ONE_REG, 5, 2>;
-using LOW_BIT = RegMask<ONE_REG, 0, 0>;
-using HIGH_BIT = RegMask<ONE_REG, 7, 7>;
+DECLR_MASK(WORD_BYTE_H, WORD_REG, 15, 8)
+DECLR_MASK(WORD_BYTE_L, WORD_REG, 7, 0)
+DECLR_MASK(LOW_NIBBLE, ZERO_REG, 3, 0);
+DECLR_MASK(MID_NIBBLE, ONE_REG, 5, 2);
+DECLR_MASK(LOW_BIT, ONE_REG, 0, 0);
+DECLR_MASK(HIGH_BIT, ONE_REG, 7, 7);
 
 class DummyBus: public Bus {
 public:

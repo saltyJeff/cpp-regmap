@@ -13,9 +13,8 @@ namespace regmap {
 	/**
 	 * An implementation of a register map.
 	 *
-	 * @tparam WORD_SZ the type of each word in the regmap
 	 * @tparam ENDIAN the endianness of the device
-	 * @tparam REGS registers to memoize. Make sure that there are no duplicates in this register!
+	 * @tparam MEMOIZED registers to memoize. Make sure that there are no duplicates in this register!
 	 */
 	template<endian ENDIAN,
 		typename... MEMOIZED>
@@ -63,6 +62,10 @@ namespace regmap {
 			}
 			newValue = applyMask<MASK>(newValue, src);
 			return write<RegOf<MASK>>(newValue);
+		}
+		template<typename MASK_VAL>
+		int write() {
+			return write<MaskOf<MASK_VAL>>(MASK_VAL::val);
 		}
 
 		// the following are just utilities

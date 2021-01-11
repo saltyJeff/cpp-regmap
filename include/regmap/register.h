@@ -99,11 +99,12 @@ namespace regmap {
 
 	/* final merge definition */
 	template <typename HEAD, typename... TAIL>
-	using MergeMaskValues = MaskVal<
+	using MergeMaskVals = MaskVal<
 	    MergeMasks<MaskOf<HEAD>, MaskOf<TAIL>...>,
         mergeMasks<MaskOf<HEAD>, MaskOf<TAIL>...>(HEAD::val, TAIL::val...)
     >;
 }
 
-#define REG(NAME, ADDR, HIGHBIT, LOWBIT) constexpr regmap::Register NAME = regmap::newRegister(ADDR, HIGHBIT, LOWBIT);
-#define REG_BYTE(NAME, ADDR) constexpr regmap::Register NAME = regmap::newRegister(ADDR, 7, 0);
+#define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Register<ADDR, SZ>;
+#define DECLR_BYTE( NAME, ADDR ) using NAME = regmap::Register<ADDR, uint8_t>;
+#define DECLR_MASK( NAME, REG, HIGH, LOW ) using NAME = regmap::RegMask<REG, HIGH, LOW>;
