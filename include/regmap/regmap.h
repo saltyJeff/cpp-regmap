@@ -67,6 +67,7 @@ namespace regmap {
 		int write() {
 			return write<MaskOf<MASK_VAL>>(MASK_VAL::val);
 		}
+		// it doesn't make sense to read in an MASK-VAL
 
 		// the following are just utilities
 		template<typename REG>
@@ -117,7 +118,7 @@ namespace regmap {
 			return -1;
 		}
 		template <typename REG_SZ, size_t N = 0>
-		REG_SZ* memoPtr(size_t memoIdx) {
+		constexpr REG_SZ* memoPtr(size_t memoIdx) {
 			if (N == memoIdx) {
 				return &std::get<N>(memoizedRegs);
 			}

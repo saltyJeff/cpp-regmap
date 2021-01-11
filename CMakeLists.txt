@@ -13,5 +13,4 @@ target_sources(regmap INTERFACE ${SRC_ROOT}/regmap.h
         ${SRC_ROOT}/utils.h)
 
 add_subdirectory(test)
-
-target_link_libraries(test PRIVATE regmap)
+target_link_libraries(regmap_test PRIVATE regmap)

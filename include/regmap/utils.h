@@ -1,15 +1,17 @@
-
+/*
+ * I was wary of #include <algorithm>, since we only need the const
+ * versions of min and max, and want to throw on actually invoking
+ * them at runtime
+ */
 #pragma once
-#include <utility>
-#include <tuple>
-
-// varidic max, min, and minmax implementation (named maximum, minimum and min_max to avoid confusion)
-// no support for custom comparators (mainly because i'm not sure how they should be specified)
 
 namespace regmap {
 	/**
 	 * Modified from: https://gist.github.com/thomcc/7739146
 	 */
+	 
+	// varidic max, min, and minmax implementation (named maximum, minimum and min_max to avoid confusion)
+	// no support for custom comparators (mainly because i'm not sure how they should be specified)
 	namespace minmax {
 		// max base case
 		template <class T>
