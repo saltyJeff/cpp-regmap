@@ -24,6 +24,11 @@ namespace endianfix {
 	/**
 	 * Swapping routines
 	 */
+#ifdef __GNUC__
+#define bswap16 __builtin_bswap16
+#define bswap32 __builtin_bswap32
+#define bswap64 __builtin_bswap64
+#else
 	inline uint16_t bswap16(uint16_t s) {
 		return ((s & 0xFF) << 8) | s >> 8;
 	}
@@ -33,6 +38,7 @@ namespace endianfix {
 	inline uint64_t bswap64(uint64_t l) {
 		return (bswap32((l & 0xffffffff) << 32)) | bswap32(l >> 32);
 	}
+#endif
 	/**
 	 * Definition for 24-bit integers
 	 */
@@ -48,30 +54,31 @@ namespace endianfix {
     using equal = typename std::is_same<A, B>::value;
 
 	// specialization: bytes do not get modified
-	inline uint8_t fixEndianess(uint8_t c) { return c; }
+	template<endian ENDIANESS>
+	inline uint8_t fixEndianess(uint8_t *c) { return *c; }
 	// specialization: only swap bytes if the endianness is not the same as native
 	// for 16 bits
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS == endian::native, uint16_t> fixEndianess(uint16_t s) { return s; }
+	inline typeif<ENDIANESS == endian::native, uint16_t> fixEndianess(uint16_t *s) { return *s; }
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS != endian::native, uint16_t> fixEndianess(uint16_t s) { return bswap16(s); }
+	inline typeif<ENDIANESS != endian::native, uint16_t> fixEndianess(uint16_t *s) { return bswap16(*s); }
 	// for 32 bits
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS == endian::native, uint32_t> fixEndianess(uint32_t i) { return i; }
+	inline typeif<ENDIANESS == endian::native, uint32_t> fixEndianess(uint32_t *i) { return *i; }
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS != endian::native, uint32_t> fixEndianess(uint32_t i) { return bswap32(i); }
+	inline typeif<ENDIANESS != endian::native, uint32_t> fixEndianess(uint32_t *i) { return bswap32(*i); }
 	// for 64 bits
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS == endian::native, uint64_t> fixEndianess(uint64_t l) { return l; }
+	inline typeif<ENDIANESS == endian::native, uint64_t> fixEndianess(uint64_t *l) { return *l; }
 	template<endian ENDIANESS>
-	inline typeif<ENDIANESS != endian::native, uint64_t> fixEndianess(uint64_t l) { return bswap64(l); }
+	inline typeif<ENDIANESS != endian::native, uint64_t> fixEndianess(uint64_t *l) { return bswap64(*l); }
 	// specialization: no swap magic for the 24bit numbers
-	template<endian ENDIANESS>
-	inline typeif<ENDIANESS == endian::little, uint32_t> fixEndianess(uint24_t w) {
-		return w[0] + (w[1] << 8) + (w[2] << 16);
-	}
-	template<endian ENDIANESS>
-	inline typeif<ENDIANESS == endian::big, uint32_t> fixEndianess(uint24_t w) {
-		return (w[2] << 16) + (w[1] << 8) + w[0];
-	}
+//	template<endian ENDIANESS>
+//	inline typeif<ENDIANESS == endian::little, uint32_t> fixEndianess(uint24_t w) {
+//		return w[0] + (w[1] << 8) + (w[2] << 16);
+//	}
+//	template<endian ENDIANESS>
+//	inline typeif<ENDIANESS == endian::big, uint32_t> fixEndianess(uint24_t w) {
+//		return (w[2] << 16) + (w[1] << 8) + w[0];
+//	}
 };

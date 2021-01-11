@@ -1,6 +1,8 @@
 #include "doctest.h"
 #include "test_common.h"
 
+TEST_SUITE_BEGIN("Utilities");
+
 TEST_CASE("Bitmasks work correctly") {
 	SUBCASE("Shifting in values works") {
 		CHECK(shiftInValue<WORD_BYTE_H>(0x69) == 0x6900);
@@ -32,3 +34,5 @@ TEST_CASE("Bitsets work correctly") {
 	bitset_set(bits, 8);
 	CHECK(bitset_test(bits, 8) == true);
 }
+
+TEST_SUITE_END();

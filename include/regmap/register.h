@@ -45,7 +45,11 @@ namespace regmap {
 	}
 	template<typename MASK>
 	using MaskType = RegType<RegOf<MASK>>;
-
+	template <typename MASK>
+	constexpr bool MaskSpansRegister() {
+		size_t registerWidth = sizeof(MaskType<MASK>);
+		return MaskH<MASK>() == (registerWidth * 8 - 1) && MaskL<MASK>() == 0;
+	}
 	/* Bitmask utility */
 	template<typename MASK>
 	constexpr MaskType<MASK> bitmask() {
@@ -58,6 +62,10 @@ namespace regmap {
 	template<typename MASK>
 	constexpr MaskType<MASK> shiftInValue(MaskType<MASK> value) {
 		return (value << MASK::maskLow) & bitmask<MASK>();
+	}
+	template<typename MASK>
+	constexpr MaskType<MASK> applyMask(MaskType<MASK> original, MaskType<MASK> newVal) {
+		return (original & ~bitmask<MASK>()) | shiftInValue<MASK>(newVal);
 	}
 	template<typename MASK>
 	constexpr MaskType<MASK> shiftOutValue(MaskType<MASK> value) {
