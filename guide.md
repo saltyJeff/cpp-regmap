@@ -69,7 +69,7 @@ read happens if the first one went through. Thanks C++17!
 
 Writing is the same, except you change the name of the method from `read` to `write`:
 ```c++
-regmap.read<MANUFACTURER>(15); // returns 0 on success, < 0 on bus error
+regmap.write<MANUFACTURER>(15); // returns 0 on success, < 0 on bus error
 ```
 ## 6. Merging masks together
 What if we want to write `MANUFACTURER` and `REVISION` at the same time. Should we do it in 1 transaction,
@@ -82,7 +82,7 @@ using merged = MergeMaskVals<manufacturerValue, revisionValue>;
 regmap.write<merged>(); // will set WHOAMI to 0x21
 ```
 The `Regmap` is smart enough to see that you're completely rewriting `WHOAMI`, and will do this
-in a single write transaction. In fact, observation is made at compile time. Thanks C++17!
+in a single write transaction. In fact, this observation is made at compile time. Thanks C++17!
 
 Another compile-time bonus: if you try to merge masks from 2 different registers, it will be
 a compile-time fault.
