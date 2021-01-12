@@ -34,34 +34,18 @@ namespace regmap {
 		int write(RegType<REG> value) {
 			return privWrite<RegType<REG>>(RegAddr<REG>(), value);
 		}
-		// the following are templated of masks and mask-vals
-		template<typename MASK>
-		int read(MaskType<MASK>& dest) {
-			int r = read<RegOf<MASK>>(dest);
+		// the following are templated of masks
+		template<typename HEAD, typename ...REST>
+		int read(MaskType<HEAD>& headVal, MaskType<REST>&... restVal) {
+			using MergedMask = MergeMasks<HEAD, REST...>;
+			MaskType<HEAD> regValue;
+			int r = read<RegOf<MergedMask>>(regValue);
 			if(r < 0) {
 				return r;
 			}
-			dest = shiftOutValue<MASK>(dest);
+			distributeMask<MaskType<HEAD>, HEAD, REST...>(regValue, headVal, restVal...);
 			return 0;
 		}
-		// allow for handling multiple masks at the same time
-//		template<typename HEAD, typename ...REST>
-//		int read(MaskType<HEAD> &headVal, MaskType<REST>&... restVal) {
-//			using MergedMask = MergeMasks<HEAD, REST...>;
-//			auto maskedValue = mergeMasks<HEAD, REST...>(headVal, restVal...);
-//			// if the new mask spans the whole reg, we don't need the old value
-//			if(MaskSpansRegister<MergedMask>()) {
-//				return write<RegOf<MergedMask>>(maskedValue);
-//			}
-//			// otherwise, read in the old value and write out the new one
-//			MaskType<MergedMask> newValue;
-//			int r = read<RegOf<MergedMask>>(newValue);
-//			if(r < 0) {
-//				return r;
-//			}
-//			newValue = applyMask<MergedMask>(newValue, maskedValue);
-//			return write<RegOf<MergedMask>>(newValue);
-//		}
 		template<typename HEAD, typename ...REST>
 		int write(MaskType<HEAD> headVal, MaskType<REST>... restVal) {
 			using MergedMask = MergeMasks<HEAD, REST...>;

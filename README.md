@@ -7,6 +7,7 @@ as painless as possible.
 ## Requirements
 * C++ 17 compliant compiler
     - Tested on MinGW
+    - Tested on g++ 8.3.0
 * An implementation of:
     * `#include <type_traits>`
     * `#include <cstdio>`

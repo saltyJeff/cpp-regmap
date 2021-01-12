@@ -32,6 +32,11 @@ TEST_CASE("Mask merging") {
 	CHECK(bus.writeAccesses == writes + 1);
 	testMap.read<ZERO_REG>(value);
 	CHECK(value == 0x21);
+
+	uint8_t low, high;
+	testMap.read<LOW_NIBBLE, HIGH_NIBBLE>(low, high);
+	CHECK(low == 0x1);
+	CHECK(high == 0x2);
 }
 
 TEST_CASE("Memoization occurs") {

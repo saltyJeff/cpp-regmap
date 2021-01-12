@@ -1,7 +1,7 @@
 #include "test_common.h"
 #include <cstdio>
 /**
- * A small function to check what exactly gets compiled out
+ * A small function to make sure the compile size is OK
  */
 int main() {
 	DummyBus bus;
@@ -10,9 +10,10 @@ int main() {
 	uint8_t x;
 	testMap.read<ONE_REG>(x);
 
-	testMap.write<WORD_BYTE_H, WORD_BYTE_L>(2, 6);
+	uint16_t a, b;
+	testMap.read<WORD_BYTE_H>(a);
 
 	// print all the variables we used, so the compiler can't optimize them out
-	printf("screw u optimizing compiler: %d\n", x);
+	printf("screw u optimizing compiler: %x, %x, %x\n", x, a, b);
 	return 0;
 }

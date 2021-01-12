@@ -78,7 +78,7 @@ namespace regmap {
 		return (... | shiftInValue<REST>(values));
 	}
 
-	// the type version (so easy)
+	// the type version
 	template <typename HEAD, typename... REST>
 	using MergeMasks = std::enable_if_t<
 		all_same<RegOf<HEAD>, RegOf<REST>...>::value,
@@ -88,6 +88,12 @@ namespace regmap {
 			minimum(HEAD::maskLow, REST::maskLow...)
 		>
 	>;
+
+	// distributes a list of masks into a list of references
+	template<typename T, typename ...MASKS>
+	inline void distributeMask(T value, MaskType<MASKS>&... masks) {
+		(... | (masks = shiftOutValue<MASKS>(value)) );
+	}
 }
 
 #define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Register<ADDR, SZ>;
