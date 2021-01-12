@@ -47,7 +47,7 @@ namespace regmap {
 	using MaskType = RegType<RegOf<MASK>>;
 	template <typename MASK>
 	constexpr bool MaskSpansRegister() {
-		size_t registerWidth = sizeof(MaskType<MASK>);
+		auto registerWidth = sizeof(MaskType<MASK>);
 		return MaskH<MASK>() == (registerWidth * 8 - 1) && MaskL<MASK>() == 0;
 	}
 	/* Bitmask utility */

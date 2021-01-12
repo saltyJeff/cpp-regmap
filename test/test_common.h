@@ -1,7 +1,8 @@
 #pragma once
 #include <cstdint>
-
 #include <regmap/regmap.h>
+#include <cstring>
+
 using namespace regmap;
 
 /* Define test registers */
@@ -27,7 +28,7 @@ public:
 	uint8_t byteMem[4] = {2, 4, 6, 8};
 	uint16_t wordMem[4] = {2, 4, 6, 8};
 
-	uint8_t *resolveAddr(uint16_t regAddr) {
+	constexpr uint8_t *resolveAddr(uint16_t regAddr) {
 		if(0 <= regAddr && regAddr < 4) {
 			return &byteMem[regAddr];
 		}
@@ -42,9 +43,7 @@ public:
 		if(addr == nullptr) {
 			return -1;
 		}
-		for(int i = 0; i < num; i++) {
-			dest[i] = addr[i];
-		}
+		memcpy(dest, addr, num);
 		readAccesses++;
 		return 0;
 	}
@@ -53,9 +52,7 @@ public:
 		if(addr == nullptr) {
 			return -1;
 		}
-		for(int i = 0; i < num; i++) {
-			addr[i] = src[i];
-		}
+		memcpy(addr, src, num);
 		writeAccesses++;
 		return 0;
 	}

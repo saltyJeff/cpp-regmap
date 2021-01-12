@@ -62,7 +62,7 @@ namespace regmap {
 	struct NMemoizer {
 		static constexpr reg_addr_t NUM_MEMOIZED = sizeof...(REGS);
 		MemoHolder<0, REGS...> memos;
-		bitset<requiredBytes(NUM_MEMOIZED)> regSeen = {0};
+		bitset<NUM_MEMOIZED> regSeen = {0};
 
 		constexpr void* getPtr(reg_addr_t addr) {
 			return memos.getPtr(addr);

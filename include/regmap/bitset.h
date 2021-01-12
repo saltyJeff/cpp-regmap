@@ -2,22 +2,21 @@
 #include <cstdint>
 #include <type_traits>
 namespace regmap {
-	// BITSET
-	/**
-	 * Get the required bytes needed to hold N bits
-	 * @param n the number of bits to hold
-	 * @return the number of bytes necessary
-	 */
-	constexpr unsigned int requiredBytes(unsigned int n) {
-		return n % 8 == 0 ? n / 8 : n / 8 + 1;
+	// a simple bitset implementation.
+
+	// use system integer size to reduce offset-addressing
+	static constexpr std::size_t INT_SIZE = sizeof(int);
+
+	constexpr unsigned int requiredInts(unsigned int nBits) {
+		return (nBits + INT_SIZE - 1) / INT_SIZE;
 	}
 	template<unsigned int N>
-	using bitset = uint8_t[requiredBytes(N)];
+	using bitset = int[requiredInts(N)];
 
-	inline bool bitset_test(uint8_t *bitset, unsigned int bit) {
-		return bitset[bit / 8] & (1 << (bit % 8));
+	inline bool bitset_test(const int *bitset, unsigned int bit) {
+		return bitset[bit / INT_SIZE] & (1 << (bit % INT_SIZE));
 	}
-	inline void bitset_set(uint8_t *bitset, unsigned  int bit) {
-		bitset[bit / 8] |= 1 << (bit % 8);
+	inline void bitset_set(int *bitset, unsigned  int bit) {
+		bitset[bit / INT_SIZE] |= 1 << (bit % INT_SIZE);
 	}
 }

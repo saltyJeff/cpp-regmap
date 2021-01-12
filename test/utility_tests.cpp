@@ -4,6 +4,12 @@
 TEST_SUITE_BEGIN("Utilities");
 
 TEST_CASE("Bitmasks work correctly") {
+	SUBCASE("Masks are correct") {
+		CHECK(bitmask<MID_NIBBLE>() == 0b00111100);
+		CHECK(bitmask<HIGH_NIBBLE>() == 0xF0);
+		CHECK(bitmask<HIGH_BIT>() == 0x80);
+		CHECK(bitmask<LOW_BIT>() == 1);
+	}
 	SUBCASE("Shifting in values works") {
 		CHECK(shiftInValue<WORD_BYTE_H>(0x69) == 0x6900);
 		CHECK(shiftInValue<WORD_BYTE_L>(0x69) == 0x0069);
