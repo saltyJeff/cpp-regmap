@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <type_traits>
-#include "bitstuff.h"
+#include "bitset.h"
 #include "endianfix.h"
 #include "utils.h"
 

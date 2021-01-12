@@ -1,10 +1,9 @@
 #pragma once
 #include "register.h"
 #include "bus.h"
-#include "bitstuff.h"
 #include <cstdint>
 #include "endianfix.h"
-#include <tuple>
+#include "memoizer.h"
 
 namespace regmap {
 	using endianfix::endian;
@@ -20,10 +19,7 @@ namespace regmap {
 		typename... MEMOIZED>
 	class Regmap {
 	public:
-		static constexpr unsigned int NUM_MEMOIZED = sizeof...(MEMOIZED);
-		using MemoSzs = std::tuple<RegType<MEMOIZED>...>;
-		MemoSzs memoizedRegs;
-		bitset<NUM_MEMOIZED> seen = {0};
+		Memoizer<MEMOIZED...> memoized;
 		dev_addr_t devAddr;
 		Bus *bus;
 
@@ -45,7 +41,7 @@ namespace regmap {
 			if(r < 0) {
 				return r;
 			}
-			dest = shiftOutValue<MASK>>(dest);
+			dest = shiftOutValue<MASK>(dest);
 			return 0;
 		}
 		// allow for writing multiple masks at the same time
@@ -70,24 +66,24 @@ namespace regmap {
 		// the following are just utilities
 		template<typename REG>
 		bool isMemoized() {
-			return memoIndex(RegAddr<REG>()) >= 0;
+			return memoized.isMemoized(memoized.getIdx(RegAddr<REG>()));
 		}
 	private:
 		// to reduce binary size, we'll template the below only on the size of the register
 		template<typename REG_SZ>
 		int privRead(reg_addr_t regAddr, REG_SZ &dest) {
-			int32_t memoIdx = memoIndex(regAddr);
-			if(memoIdx >= 0 && bitset_test(seen, memoIdx)) {
-				return *memoPtr<REG_SZ>(memoIdx);
+			reg_addr_t memoIdx = memoized.getIdx(regAddr);
+			if(memoized.isMemoized(memoIdx) && memoized.isSeen(memoIdx)) {
+				return *( (REG_SZ*)memoized.getPtr(regAddr) );
 			}
 			int r = bus->read(devAddr, regAddr, (uint8_t*)&dest, sizeof(REG_SZ));
 			if(r < 0) {
 				return r;
 			}
 			dest = fixEndianess<ENDIAN>(&dest);
-			if(memoIdx >= 0) {
-				*memoPtr<REG_SZ>(memoIdx) = dest;
-				bitset_set(seen, memoIdx);
+			if(memoized.isMemoized(memoIdx)) {
+				*( (REG_SZ*)memoized.getPtr(regAddr) ) = dest;
+				memoized.setSeen(memoIdx);
 			}
 			return 0;
 		}
@@ -98,34 +94,12 @@ namespace regmap {
 			if(r < 0) {
 				return r;
 			}
-			int32_t memoIdx = memoIndex(regAddr);
-			if(memoIdx >= 0) {
-				*memoPtr<REG_SZ>(memoIdx) = value;
-				bitset_set(seen, memoIdx);
+			reg_addr_t memoIdx = memoized.getIdx(regAddr);
+			if(memoized.isMemoized(memoIdx)) {
+				*( (REG_SZ*)memoized.getPtr(regAddr) ) = value;
+				memoized.setSeen(memoIdx);
 			}
 			return 0;
-		}
-		// the below 2 functions should compile to a switch statement
-		constexpr int32_t memoIndex(reg_addr_t addr) {
-			reg_addr_t regs[] = {MEMOIZED::addr...};
-			for(size_t i = 0; i < NUM_MEMOIZED; i++) {
-				if(regs[i] == addr) {
-					return i;
-				}
-			}
-			return -1;
-		}
-		template <typename REG_SZ, size_t N = 0>
-		constexpr REG_SZ* memoPtr(size_t memoIdx) {
-			if (N == memoIdx) {
-				return (REG_SZ*) &std::get<N>(memoizedRegs);
-			}
-			if constexpr (N + 1 < std::tuple_size_v<MemoSzs>) {
-				return memoPtr<N + 1>(memoIdx);
-			}
-			else {
-				return nullptr;
-			}
 		}
 	};
 }

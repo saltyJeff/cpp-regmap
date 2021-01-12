@@ -76,7 +76,7 @@ What if we want to write `MANUFACTURER` and `REVISION` at the same time. Should 
 but require the developer to know that they lie on the same register? Or should we write 1 at a time and burn 2
 transactions? C++ 17 says no! we can do both at the same time:
 ```
-regmap.write<MANUFACTURER, REVISION>(2, 1); // will set WHOAMI to 0x21
+regmap.write<MANUFACTURER, REVISION>(2, 1); // will set WHOAMI to 0x21 in a single write
 ```
 The `Regmap` is smart enough to see that you're completely rewriting `WHOAMI`, and will do this
 in a single write transaction. In fact, this observation is made at compile time. Thanks C++17!

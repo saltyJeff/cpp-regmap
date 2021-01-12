@@ -10,8 +10,6 @@ as painless as possible.
 * An implementation of:
     * `#include <type_traits>`
     * `#include <cstdio>`
-    * `#include <tuple>`
-        - I only use tuples of integers.
 
 ## Installation
 This library is header-only. Either copy the headers in `include/regmap/`

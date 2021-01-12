@@ -10,7 +10,8 @@ target_sources(regmap INTERFACE ${SRC_ROOT}/regmap.h
         ${SRC_ROOT}/bitstuff.h
         ${SRC_ROOT}/bus.h
         ${SRC_ROOT}/endianfix.h
-        ${SRC_ROOT}/utils.h)
+        ${SRC_ROOT}/utils.h
+        ${SRC_ROOT}/memoizer.h)
 
 add_subdirectory(test)
 target_link_libraries(regmap_test PRIVATE regmap)

@@ -24,20 +24,38 @@ class DummyBus: public Bus {
 public:
 	int readAccesses = 0;
 	int writeAccesses = 0;
-	uint8_t mem[4] = {2, 4, 6, 8};
+	uint8_t byteMem[4] = {2, 4, 6, 8};
+	uint16_t wordMem[4] = {2, 4, 6, 8};
+
+	uint8_t *resolveAddr(uint16_t regAddr) {
+		if(0 <= regAddr && regAddr < 4) {
+			return &byteMem[regAddr];
+		}
+		if(0x10 <= regAddr && regAddr < 0x18) {
+			return ((uint8_t*)wordMem) + (regAddr - 0x10);
+		}
+		return nullptr;
+	}
+
 	int read(unsigned int deviceAddr, uint16_t regAddr, uint8_t *dest, unsigned int num) override {
-		if(regAddr >= sizeof(mem)) {
+		uint8_t *addr = resolveAddr(regAddr);
+		if(addr == nullptr) {
 			return -1;
 		}
-		*dest = mem[regAddr];
+		for(int i = 0; i < num; i++) {
+			dest[i] = addr[i];
+		}
 		readAccesses++;
 		return 0;
 	}
 	int write(unsigned int deviceAddr, uint16_t regAddr, uint8_t *src, unsigned int num) override {
-		if(regAddr >= sizeof(mem)) {
+		uint8_t *addr = resolveAddr(regAddr);
+		if(addr == nullptr) {
 			return -1;
 		}
-		mem[regAddr] = *src;
+		for(int i = 0; i < num; i++) {
+			addr[i] = src[i];
+		}
 		writeAccesses++;
 		return 0;
 	}
