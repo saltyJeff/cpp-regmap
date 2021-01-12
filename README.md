@@ -10,7 +10,7 @@ as painless as possible.
     - Tested on g++ 8.3.0
 * An implementation of:
     * `#include <type_traits>`
-    * `#include <cstdio>`
+    * `#include <cstdint>`
 
 ## Installation
 This library is header-only. Either copy the headers in `include/regmap/`
