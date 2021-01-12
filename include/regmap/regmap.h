@@ -44,7 +44,24 @@ namespace regmap {
 			dest = shiftOutValue<MASK>(dest);
 			return 0;
 		}
-		// allow for writing multiple masks at the same time
+		// allow for handling multiple masks at the same time
+//		template<typename HEAD, typename ...REST>
+//		int read(MaskType<HEAD> &headVal, MaskType<REST>&... restVal) {
+//			using MergedMask = MergeMasks<HEAD, REST...>;
+//			auto maskedValue = mergeMasks<HEAD, REST...>(headVal, restVal...);
+//			// if the new mask spans the whole reg, we don't need the old value
+//			if(MaskSpansRegister<MergedMask>()) {
+//				return write<RegOf<MergedMask>>(maskedValue);
+//			}
+//			// otherwise, read in the old value and write out the new one
+//			MaskType<MergedMask> newValue;
+//			int r = read<RegOf<MergedMask>>(newValue);
+//			if(r < 0) {
+//				return r;
+//			}
+//			newValue = applyMask<MergedMask>(newValue, maskedValue);
+//			return write<RegOf<MergedMask>>(newValue);
+//		}
 		template<typename HEAD, typename ...REST>
 		int write(MaskType<HEAD> headVal, MaskType<REST>... restVal) {
 			using MergedMask = MergeMasks<HEAD, REST...>;
