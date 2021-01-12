@@ -88,21 +88,6 @@ namespace regmap {
 			minimum(HEAD::maskLow, REST::maskLow...)
 		>
 	>;
-	/* Mask-value pair definition */
-	template<typename MASK, MaskType<MASK> VALUE>
-	struct MaskVal {
-		using mask = MASK;
-		static constexpr MaskType<MASK> val = VALUE;
-	};
-	template<typename MASK_VALUE>
-	using MaskOf = typename MASK_VALUE::mask;
-
-	/* final merge definition */
-	template <typename HEAD, typename... TAIL>
-	using MergeMaskVals = MaskVal<
-	    MergeMasks<MaskOf<HEAD>, MaskOf<TAIL>...>,
-        mergeMasks<MaskOf<HEAD>, MaskOf<TAIL>...>(HEAD::val, TAIL::val...)
-    >;
 }
 
 #define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Register<ADDR, SZ>;

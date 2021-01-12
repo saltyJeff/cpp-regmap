@@ -19,16 +19,15 @@ TEST_CASE("Bitmasks work correctly") {
 		CHECK(applyMask<HIGH_BIT>(0xAA, 0) == 0x2A);
 	}
 	SUBCASE("Merging masks is correct") {
-		using HIGH_BYTE_12 = MaskVal<WORD_BYTE_H, 0x12>;
-		using LOW_BYTE_21 = MaskVal<WORD_BYTE_L, 0x21>;
-		using mergeResult = MergeMaskVals<HIGH_BYTE_12, LOW_BYTE_21>;
-		CHECK(mergeResult::val == 0x1221);
+		// check value implementation
+		auto mergeResult = mergeMasks<WORD_BYTE_H, WORD_BYTE_L>(0x12, 0x21);
+		CHECK(mergeResult == 0x1221);
 
-		using HIGH_BIT_1 = MaskVal<HIGH_BIT, 1>;
-		using LOW_BIT_1 = MaskVal<LOW_BIT, 1>;
-		using MID_NIBBLE_2 = MaskVal<MID_NIBBLE, 2>;
-		using mergeResult1 = MergeMaskVals<HIGH_BIT_1, LOW_BIT_1, MID_NIBBLE_2>;
-		CHECK(mergeResult1::val == 0b10001001);
+		// check type implementation
+		using MaskMerged = MergeMasks<WORD_BYTE_L, WORD_BYTE_H>;
+		CHECK(MaskMerged::maskHigh == 15);
+		CHECK(MaskMerged::maskLow == 0);
+		CHECK(MaskSpansRegister<MaskMerged>());
 	}
 }
 TEST_CASE("Bitsets work correctly") {

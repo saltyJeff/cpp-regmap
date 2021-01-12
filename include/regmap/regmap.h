@@ -48,26 +48,24 @@ namespace regmap {
 			dest = shiftOutValue<MASK>>(dest);
 			return 0;
 		}
-		template<typename MASK>
-		int write(MaskType<MASK> src) {
+		// allow for writing multiple masks at the same time
+		template<typename HEAD, typename ...REST>
+		int write(MaskType<HEAD> headVal, MaskType<REST>... restVal) {
+			using MergedMask = MergeMasks<HEAD, REST...>;
+			auto maskedValue = mergeMasks<HEAD, REST...>(headVal, restVal...);
 			// if the new mask spans the whole reg, we don't need the old value
-			if(MaskSpansRegister<MASK>()) {
-				return write<RegOf<MASK>>(src);
+			if(MaskSpansRegister<MergedMask>()) {
+				return write<RegOf<MergedMask>>(maskedValue);
 			}
 			// otherwise, read in the old value and write out the new one
-			MaskType<MASK> newValue;
-			int r = read<RegOf<MASK>>(newValue);
+			MaskType<MergedMask> newValue;
+			int r = read<RegOf<MergedMask>>(newValue);
 			if(r < 0) {
 				return r;
 			}
-			newValue = applyMask<MASK>(newValue, src);
-			return write<RegOf<MASK>>(newValue);
+			newValue = applyMask<MergedMask>(newValue, maskedValue);
+			return write<RegOf<MergedMask>>(newValue);
 		}
-		template<typename MASK_VAL>
-		int write() {
-			return write<MaskOf<MASK_VAL>>(MASK_VAL::val);
-		}
-		// it doesn't make sense to read in an MASK-VAL
 
 		// the following are just utilities
 		template<typename REG>
@@ -82,7 +80,7 @@ namespace regmap {
 			if(memoIdx >= 0 && bitset_test(seen, memoIdx)) {
 				return *memoPtr<REG_SZ>(memoIdx);
 			}
-			int r = bus->read(devAddr, regAddr, &dest, sizeof(REG_SZ));
+			int r = bus->read(devAddr, regAddr, (uint8_t*)&dest, sizeof(REG_SZ));
 			if(r < 0) {
 				return r;
 			}
@@ -96,7 +94,7 @@ namespace regmap {
 		template<typename REG_SZ>
 		int privWrite(reg_addr_t regAddr, REG_SZ value) {
 			value = fixEndianess<ENDIAN>(&value);
-			int r = bus->write(devAddr, regAddr, &value, sizeof(REG_SZ));
+			int r = bus->write(devAddr, regAddr, (uint8_t*)&value, sizeof(REG_SZ));
 			if(r < 0) {
 				return r;
 			}
@@ -120,7 +118,7 @@ namespace regmap {
 		template <typename REG_SZ, size_t N = 0>
 		constexpr REG_SZ* memoPtr(size_t memoIdx) {
 			if (N == memoIdx) {
-				return &std::get<N>(memoizedRegs);
+				return (REG_SZ*) &std::get<N>(memoizedRegs);
 			}
 			if constexpr (N + 1 < std::tuple_size_v<MemoSzs>) {
 				return memoPtr<N + 1>(memoIdx);

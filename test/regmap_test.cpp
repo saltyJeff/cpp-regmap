@@ -24,6 +24,14 @@ TEST_CASE("Bitmasking is applied") {
 	CHECK(tmp == compare);
 }
 
+TEST_CASE("Mask merging") {
+	uint8_t value = 0x55;
+	testMap.write<ZERO_REG>(value);
+	testMap.write<HIGH_NIBBLE, LOW_NIBBLE>(0x2, 0x1);
+	testMap.read<ZERO_REG>(value);
+	CHECK(value == 0x21);
+}
+
 TEST_CASE("Memoization occurs") {
 	CHECK(testMap.isMemoized<ZERO_REG>() == false);
 	CHECK(testMap.isMemoized<ONE_REG>() == true);
