@@ -2,102 +2,52 @@
 #include <cstdint>
 #include <type_traits>
 #include "bitset.h"
-#include "endianfix.h"
+#include "alufix.h"
 #include "utils.h"
 
 namespace regmap {
-	/* Register definitions */
-	using reg_addr_t = uint16_t;
-	using endianfix::uint24_t;
+	/**
+	 * Definition for 24-bit integers
+	 */
+	using uint24_t = uint8_t[3];
 
-	template<reg_addr_t reg_addr, typename reg_size>
+	/**
+	 * Defines a register on a device
+	 * @tparam ADDR_TYPE the width of the address of the register
+	 * @tparam ADDR the address of the register
+	 * @tparam REG_WIDTH the width of the register
+	 * @tparam REG_TYPE the type of the register. This may not be the same
+	 * as an integer of REG_WIDTH in case of 24-bit values
+	 */
+	template<std::size_t ADDR_WIDTH, std::size_t ADDR, std::size_t REG_WIDTH>
 	struct Register {
-		static_assert(
-			std::is_integral_v<reg_size>
-			|| std::is_void_v<reg_size>,
-			// || std::is_same<reg_size, uint24_t>::value, deal with dumb 24bit stuff later
-			"Registers must be backed by integer values");
-		static constexpr reg_addr_t addr = reg_addr;
-		using backingType = reg_size;
+		static constexpr std::size_t AddrWidth = ADDR_WIDTH;
+		static constexpr std::size_t RegWidth = REG_WIDTH;
+		static constexpr std::size_t addr = ADDR;
 	};
-	template<typename REG>
-	constexpr reg_addr_t RegAddr() {
-		return REG::addr;
-	}
-	template<typename REG>
-	using RegType = typename REG::backingType;
+	/**
+	 * Convenience alias to Register
+	 */
+	template<typename ADDR_TYPE, ADDR_TYPE ADDR, typename REG_TYPE>
+	using Reg = Register<sizeof(ADDR_TYPE), ADDR, sizeof(REG_TYPE)>;
 
-	/* Mask definitions */
-	template<typename REG, uint8_t mask_high, uint8_t mask_low>
+	template<typename ADDR_TYPE, ADDR_TYPE ADDR>
+	using Cmd = Register<sizeof(ADDR_TYPE), ADDR, 0>;
+
+	/**
+	 * Defines a mask of an existing register
+	 * @tparam REG The register being masked
+	 * @tparam mask_high The high bit of the mask
+	 * @tparam mask_low The low bit of the mask
+	 */
+	template<typename REG, uint8_t MASK_HIGH, uint8_t MASK_LOW>
 	struct RegMask {
-		using backingReg = REG;
-		static constexpr uint8_t maskHigh = mask_high;
-		static constexpr uint8_t maskLow = mask_low;
+		using Reg = REG;
+		static constexpr uint8_t MaskHigh = MASK_HIGH;
+		static constexpr uint8_t MaskLow = MASK_LOW;
 	};
-	template <typename MASK>
-	using RegOf = typename MASK::backingReg;
-	template <typename MASK>
-	constexpr uint8_t MaskH() {
-		return MASK::maskHigh;
-	}
-	template<typename MASK>
-	constexpr uint8_t MaskL() {
-		return MASK::maskLow;
-	}
-	template<typename MASK>
-	using MaskType = RegType<RegOf<MASK>>;
-	template <typename MASK>
-	constexpr bool MaskSpansRegister() {
-		auto registerWidth = sizeof(MaskType<MASK>);
-		return MaskH<MASK>() == (registerWidth * 8 - 1) && MaskL<MASK>() == 0;
-	}
-	/* Bitmask utility */
-	template<typename MASK>
-	constexpr MaskType<MASK> bitmask() {
-		using WORD_SZ = MaskType<MASK>;
-		WORD_SZ i = WORD_SZ(); // a safe way to initialize the variable to 0
-		i = ~i; // now flip all the bits before we mask
-		return ~( (WORD_SZ)i << MASK::maskHigh << 1) & (i << MASK::maskLow);
-	}
-	/* Register mask utility to shift in and out mask values */
-	template<typename MASK>
-	constexpr MaskType<MASK> shiftInValue(MaskType<MASK> value) {
-		return (value << MASK::maskLow) & bitmask<MASK>();
-	}
-	template<typename MASK>
-	constexpr MaskType<MASK> applyMask(MaskType<MASK> original, MaskType<MASK> newVal) {
-		return (original & ~bitmask<MASK>()) | shiftInValue<MASK>(newVal);
-	}
-	template<typename MASK>
-	constexpr MaskType<MASK> shiftOutValue(MaskType<MASK> value) {
-		return (value & bitmask<MASK>()) >> MASK::maskLow;
-	}
-	/* Register mask merging */
-	// the value version
-	template <typename... REST>
-	constexpr auto mergeMasks(MaskType<REST> ... values) {
-		return (... | shiftInValue<REST>(values));
-	}
-
-	// the type version
-	template <typename HEAD, typename... REST>
-	using MergeMasks = std::enable_if_t<
-		all_same<RegOf<HEAD>, RegOf<REST>...>::value,
-		RegMask<
-			RegOf<HEAD>,
-			maximum(HEAD::maskHigh, REST::maskHigh...),
-			minimum(HEAD::maskLow, REST::maskLow...)
-		>
-	>;
-
-	// distributes a list of masks into a list of references
-	template<typename T, typename ...MASKS>
-	inline void distributeMask(T value, MaskType<MASKS>&... masks) {
-		(... | (masks = shiftOutValue<MASKS>(value)) );
-	}
 }
-
-#define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Register<ADDR, SZ>;
-#define DECLR_BYTE( NAME, ADDR ) using NAME = regmap::Register<ADDR, uint8_t>;
+/* The following macros will require a type ADDR_TYPE to be predefined */
+#define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Reg<ADDR_TYPE, ADDR, SZ>;
 #define DECLR_MASK( NAME, REG, HIGH, LOW ) using NAME = regmap::RegMask<REG, HIGH, LOW>;
-#define DECLR_CMD( NAME, ADDR ) using NAME = regmap::Register<ADDR, void>;
+#define DECLR_CMD( NAME, ADDR ) using NAME = regmap::Cmd<ADDR_TYPE, ADDR>;

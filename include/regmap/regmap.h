@@ -2,13 +2,13 @@
 #include "register.h"
 #include "bus.h"
 #include <cstdint>
-#include "endianfix.h"
+#include "alufix.h"
 #include "memoizer.h"
 
 namespace regmap {
-	using endianfix::endian;
-	using endianfix::fixEndianess;
-	using dev_addr_t = uint16_t;
+	using alufix::endian;
+	using alufix::toALURepresentation;
+	using alufix::toMachineRepresentation;
 	/**
 	 * An implementation of a register map.
 	 *
