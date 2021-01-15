@@ -4,17 +4,15 @@
 namespace regmap {
 	/** Define member accessors for Register **/
 	template <typename REG>
-	std::size_t RegAddr() {
+	constexpr std::size_t RegAddr() {
 		return REG::addr;
 	}
 	template <typename REG>
-	std::size_t RegWidth() {
-		return REG::regWidth;
+	constexpr std::size_t RegWidth() {
+		return REG::RegWidth;
 	}
-	template <typename REG>
-	using RegAddrType = typename REG::AddrType;
 	template<typename REG>
-	using RegType = alufix::types::ALUTypeImpl<RegAddr<REG>()>;
+	using RegType = alufix::types::ALUType<REG::RegWidth>; // cannot have intermediate constexpr calls
 
 
 	/** Define member accessors for RegMask **/
@@ -22,14 +20,14 @@ namespace regmap {
 	using RegOf = typename MASK::Reg;
 	template <typename MASK>
 	constexpr uint8_t MaskH() {
-		return MASK::maskHigh;
+		return MASK::MaskHigh;
 	}
 	template<typename MASK>
 	constexpr uint8_t MaskL() {
-		return MASK::maskLow;
+		return MASK::MaskLow;
 	}
 	template<typename MASK>
-	using MaskType = RegType<RegOf<MASK>>;
+	using MaskType = alufix::types::ALUType<MASK::Reg::RegWidth>; // cannot have intermediate constexpr calls
 
 	/** Register mask utilities **/
 	template <typename MASK>
@@ -42,17 +40,17 @@ namespace regmap {
 		using WORD_SZ = MaskType<MASK>;
 		WORD_SZ i = WORD_SZ(); // a safe way to initialize the variable to 0
 		i = ~i; // now flip all the bits before we mask
-		return ~( (WORD_SZ)i << MASK::maskHigh << 1) & (i << MASK::maskLow);
+		return ~( (WORD_SZ)i << MASK::MaskHigh << 1) & (i << MASK::MaskLow);
 	}
 
 	/** shifting in values to masks **/
 	template<typename MASK>
 	constexpr MaskType<MASK> shiftInValue(MaskType<MASK> value) {
-		return (value << MASK::maskLow) & bitmask<MASK>();
+		return (value << MASK::MaskLow) & bitmask<MASK>();
 	}
 	template<typename MASK>
 	constexpr MaskType<MASK> shiftOutValue(MaskType<MASK> value) {
-		return (value & bitmask<MASK>()) >> MASK::maskLow;
+		return (value & bitmask<MASK>()) >> MASK::MaskLow;
 	}
 	template<typename MASK>
 	constexpr MaskType<MASK> applyMask(MaskType<MASK> original, MaskType<MASK> newVal) {
@@ -64,17 +62,20 @@ namespace regmap {
 	}
 
 	/** Register mask merging **/
-	template <typename... REST>
-	constexpr auto mergeMasks(MaskType<REST> ... values) {
-		return (... | shiftInValue<REST>(values));
+	template <typename... MASKS>
+	constexpr auto mergeMasks(MaskType<MASKS> ... values) {
+		return (... | shiftInValue<MASKS>(values)) >> utils::minimum(MASKS::MaskLow...);
 	}
-	template <typename HEAD, typename... REST>
-	using MergeMasks = std::enable_if_t<
-		utils::all_same_types<RegOf<HEAD>, RegOf<REST>...>::value,
-		RegMask<
-			RegOf<HEAD>,
-			maximum(HEAD::maskHigh, REST::maskHigh...),
-			minimum(HEAD::maskLow, REST::maskLow...)
-		>
-	>;
+	template <typename ...MASKS>
+	struct MergeMasksImpl {
+		static_assert(utils::all_same_types<RegOf<MASKS>...>::value,
+			"Only masks of the same register can be masked");
+		using type = RegMask<
+			RegOf<utils::GetHead<MASKS...>>,
+			utils::maximum(MASKS::MaskHigh...),
+			utils::minimum(MASKS::MaskLow...)
+		>;
+	};
+	template<typename ...MASKS>
+	using MergeMasks = typename MergeMasksImpl<MASKS...>::type;
 }

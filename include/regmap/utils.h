@@ -36,8 +36,6 @@ namespace regmap::utils {
 	/*
 	 * Public interfaces
 	 */
-	template <typename T, typename... Ts>
-	using all_same_types = std::conjunction<std::is_same<T,Ts>...>;
 
 	template <class T, class ...Rest> // requires SameType<T, Rest...>
 	inline constexpr T const &
@@ -63,4 +61,18 @@ namespace regmap::utils {
 	struct TypeTernary<false, T1, T2> {
 		using type = T2;
 	};
+
+	template<typename HEAD, typename ...REST>
+	struct GetHeadImpl {
+		using type = HEAD;
+	};
+	template<typename ...ITEMS>
+	using GetHead = typename GetHeadImpl<ITEMS...>::type;
+
+	template <typename ...Ts>
+	using all_same_types = std::conjunction<std::is_same<GetHead<Ts>,Ts>...>;
+
+}
+namespace regmap {
+	using DeviceAddr = unsigned int;
 }

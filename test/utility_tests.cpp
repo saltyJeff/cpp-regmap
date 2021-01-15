@@ -31,8 +31,8 @@ TEST_CASE("Bitmasks work correctly") {
 
 		// check type implementation
 		using MaskMerged = MergeMasks<WORD_BYTE_L, WORD_BYTE_H>;
-		CHECK(MaskMerged::maskHigh == 15);
-		CHECK(MaskMerged::maskLow == 0);
+		CHECK(MaskH<MaskMerged>() == 15);
+		CHECK(MaskL<MaskMerged>() == 0);
 		CHECK(MaskSpansRegister<MaskMerged>());
 	}
 }

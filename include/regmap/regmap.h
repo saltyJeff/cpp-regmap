@@ -1,5 +1,6 @@
 #pragma once
 #include "register.h"
+#include "register_utils.h"
 #include "bus.h"
 #include <cstdint>
 #include "alufix.h"
@@ -7,8 +8,9 @@
 
 namespace regmap {
 	using alufix::endian;
-	using alufix::toALURepresentation;
-	using alufix::toMachineRepresentation;
+	using alufix::toLocalALUFormat;
+	using alufix::toDeviceFormat;
+	using alufix::fixEndianness;
 	/**
 	 * An implementation of a register map.
 	 *
@@ -16,46 +18,78 @@ namespace regmap {
 	 * @tparam MEMOIZED registers to memoize. Make sure that there are no duplicates in this register!
 	 */
 	template<endian ENDIAN,
+		typename REG_ADDR,
 		typename... MEMOIZED>
 	class Regmap {
 	public:
-		Memoizer<MEMOIZED...> memoized;
-		dev_addr_t devAddr;
+		static constexpr uint8_t REG_WIDTH = sizeof(REG_ADDR);
+		memoizer::Memoizer<MEMOIZED...> memoized;
+		DeviceAddr devAddr;
 		Bus *bus;
 
-		Regmap(Bus *bus, dev_addr_t addr): bus(bus), devAddr(addr) {}
+		Regmap(Bus *bus, DeviceAddr addr): bus(bus), devAddr(addr) {}
 
-		// the following are templated on registers
+		/**
+		 * Read a register
+		 * @tparam REG The register to read
+		 * @param dest The destination to store the value
+		 * @return negative on error
+		 */
 		template<typename REG>
 		int read(RegType<REG>& dest) {
-			return privRead<RegType<REG>>(RegAddr<REG>(), dest);
+			return directRead(RegAddr<REG>(), &dest, RegWidth<REG>());
 		}
+		/**
+		 * Write a register
+		 * @tparam REG The register to write
+		 * @param value The value to write into the regmap
+		 * @return negative on error
+		 */
 		template<typename REG>
-		typename std::enable_if_t<!std::is_same_v<RegType<REG>, void>, int>
-	    write(RegType<REG> value) {
-			return privWrite<RegType<REG>>(RegAddr<REG>(), value);
+		int write(RegType<REG> value) {
+			return directWrite(RegAddr<REG>(), &value, RegWidth<REG>());
 		}
+		/**
+		 * Writes a command (specialization of register)
+		 * @tparam REG The command to write
+		 * @return
+		 */
 		template<typename REG>
-		typename std::enable_if_t<std::is_same_v<RegType<REG>, void>, int>
-		write() {
-			return bus->write(devAddr, RegAddr<REG>(), nullptr, 0);
+		std::enable_if_t<REG::RegWidth == 0, int> write() {
+			return directWrite(RegAddr<REG>(), nullptr, 0);
 		}
-		// the following are templated of masks
-		template<typename HEAD, typename ...REST>
-		int read(MaskType<HEAD>& headVal, MaskType<REST>&... restVal) {
-			using MergedMask = MergeMasks<HEAD, REST...>;
-			MaskType<HEAD> regValue;
+		/**
+		 * Read a register and distribute its value across multiple masks
+		 * @tparam HEAD The first mask to read into
+		 * @tparam REST The other masks
+		 * @param headVal The reference for the first mask
+		 * @param restVal The reference for the other masks
+		 * @return negative on error
+		 */
+		template<typename ...MASKS>
+		int read(MaskType<MASKS>&... values) {
+			using MergedMask = MergeMasks<MASKS...>;
+			using RegType = MaskType<utils::GetHead<MASKS...>>;
+			RegType regValue;
 			int r = read<RegOf<MergedMask>>(regValue);
 			if(r < 0) {
 				return r;
 			}
-			distributeMask<MaskType<HEAD>, HEAD, REST...>(regValue, headVal, restVal...);
+			distributeMask<RegType, MASKS...>(regValue, values...);
 			return 0;
 		}
-		template<typename HEAD, typename ...REST>
-		int write(MaskType<HEAD> headVal, MaskType<REST>... restVal) {
-			using MergedMask = MergeMasks<HEAD, REST...>;
-			auto maskedValue = mergeMasks<HEAD, REST...>(headVal, restVal...);
+		/**
+		 * Write a register using its component masks
+		 * @tparam HEAD The first mask to write out
+		 * @tparam REST The other masks to write out
+		 * @param headVal The first mask value to write
+		 * @param restVal The other mask values to write
+		 * @return
+		 */
+		template<typename ...MASKS>
+		int write(MaskType<MASKS>... values) {
+			using MergedMask = MergeMasks<MASKS...>;
+			auto maskedValue = mergeMasks<MASKS...>(values...);
 			// if the new mask spans the whole reg, we don't need the old value
 			if(MaskSpansRegister<MergedMask>()) {
 				return write<RegOf<MergedMask>>(maskedValue);
@@ -70,40 +104,52 @@ namespace regmap {
 			return write<RegOf<MergedMask>>(newValue);
 		}
 
-		// the following are just utilities
+		/**
+		 * Returns whether a register is memoized
+		 * @tparam REG the register to check
+		 * @return true if it is memoized
+		 */
 		template<typename REG>
 		bool isMemoized() {
 			return memoized.isMemoized(memoized.getIdx(RegAddr<REG>()));
 		}
-	private:
-		// to reduce binary size, we'll template the below only on the size of the register
-		template<typename REG_SZ>
-		int privRead(reg_addr_t regAddr, REG_SZ &dest) {
-			reg_addr_t memoIdx = memoized.getIdx(regAddr);
+
+		/*
+		 * The following are direct implementations of regmap reading & writing.
+		 * *in the case where num is odd, make sure the void*'s can access num+1 bytes*
+		 * *when writing, your incoming pointer will be scrambled*
+		 * Beware: No type safety for you
+		 */
+		int directRead(REG_ADDR regAddr, void* dest, std::size_t num) {
+			fixEndianness<ENDIAN, REG_WIDTH>(regAddr);
+			auto memoIdx = memoized.getIdx(regAddr);
 			if(memoized.isMemoized(memoIdx) && memoized.isSeen(memoIdx)) {
-				return *( (REG_SZ*)memoized.getPtr(regAddr) );
+				alufix::memcpy(dest, memoized.getPtr(memoIdx), num);
+				return 0;
 			}
-			int r = bus->read(devAddr, regAddr, (uint8_t*)&dest, sizeof(REG_SZ));
+			auto *destPtr = reinterpret_cast<uint8_t*>(dest);
+			auto r = bus->read(devAddr, reinterpret_cast<uint8_t*>(&regAddr), REG_WIDTH, destPtr, num);
 			if(r < 0) {
 				return r;
 			}
-			dest = fixEndianess<ENDIAN>(&dest);
+			alufix::toLocalALUFormat<ENDIAN>(destPtr, destPtr, num);
 			if(memoized.isMemoized(memoIdx)) {
-				*( (REG_SZ*)memoized.getPtr(regAddr) ) = dest;
+				alufix::memcpy(memoized.getPtr(memoIdx), destPtr, num);
 				memoized.setSeen(memoIdx);
 			}
 			return 0;
 		}
-		template<typename REG_SZ>
-		int privWrite(reg_addr_t regAddr, REG_SZ value) {
-			value = fixEndianess<ENDIAN>(&value);
-			int r = bus->write(devAddr, regAddr, (uint8_t*)&value, sizeof(REG_SZ));
+		int directWrite(REG_ADDR regAddr, void* src, std::size_t num) {
+			fixEndianness<ENDIAN, REG_WIDTH>(regAddr);
+			uint8_t toSend[num];
+			alufix::toDeviceFormat<ENDIAN>(src, toSend, num);
+			int r = bus->write(devAddr, reinterpret_cast<uint8_t*>(&regAddr), REG_WIDTH, toSend, num);
 			if(r < 0) {
 				return r;
 			}
-			reg_addr_t memoIdx = memoized.getIdx(regAddr);
+			auto memoIdx = memoized.getIdx(regAddr);
 			if(memoized.isMemoized(memoIdx)) {
-				*( (REG_SZ*)memoized.getPtr(regAddr) ) = value;
+				alufix::memcpy(memoized.getPtr(memoIdx), src, num);
 				memoized.setSeen(memoIdx);
 			}
 			return 0;

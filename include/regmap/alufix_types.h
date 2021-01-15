@@ -3,9 +3,7 @@
 
 namespace alufix::types {
 	template<std::size_t SIZE>
-	struct ALUTypeImpl {
-		using type = void;
-	};
+	struct ALUTypeImpl;
 	template<>
 	struct ALUTypeImpl<1> {
 		using type = uint8_t;

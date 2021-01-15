@@ -24,11 +24,11 @@ static_assert(bitmask<HIGH_BIT>() == 0x80, "bitmask");
 
 /* check mask type merging */
 using MaskMerge1 = MergeMasks<HIGH_BIT, MID_NIBBLE>;
-static_assert(std::is_same<MaskMerge1::backingReg, ONE_REG>::value, "mask merge");
-static_assert(MaskMerge1::maskHigh == 7, "mask merge");
-static_assert(MaskMerge1::maskLow == 2, "mask merge");
+static_assert(std::is_same<RegOf<MaskMerge1>, ONE_REG>::value, "mask merge");
+static_assert(MaskH<MaskMerge1>() == 7, "mask merge");
+static_assert(MaskL<MaskMerge1>() == 2, "mask merge");
 
 using MaskMerge2 = MergeMasks<HIGH_BIT, MID_NIBBLE, LOW_BIT>;
-static_assert(std::is_same<MaskMerge2::backingReg, ONE_REG>::value, "mask merge");
-static_assert(MaskMerge2::maskHigh == 7, "mask merge");
-static_assert(MaskMerge2::maskLow == 0, "mask merge");
+static_assert(std::is_same<RegOf<MaskMerge2>, ONE_REG>::value, "mask merge");
+static_assert(MaskH<MaskMerge2>() == 7, "mask merge");
+static_assert(MaskL<MaskMerge2>() == 0, "mask merge");

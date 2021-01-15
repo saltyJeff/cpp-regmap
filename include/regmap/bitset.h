@@ -7,7 +7,7 @@ namespace regmap {
 	 */
 
 	// use system integer size to reduce offset-addressing
-	using REGMAP_BACKING_TYPE = int;
+	using REGMAP_BACKING_TYPE = unsigned int;
 
 	static constexpr std::size_t INT_SIZE = sizeof(REGMAP_BACKING_TYPE);
 

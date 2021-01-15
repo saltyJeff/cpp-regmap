@@ -16,11 +16,11 @@ namespace regmap::memoizer {
 		RegType<HEAD> value;
 		MemoHolder<IDX + 1, REST...> rest;
 
-		constexpr void* getPtr(std::size_t addr) {
-			if (addr == RegAddr<HEAD>()) {
+		constexpr void* getPtr(std::size_t idx) {
+			if (idx == IDX) {
 				return (void*)&value;
 			}
-			return rest.getPtr(addr);
+			return rest.getPtr(idx);
 		}
 		constexpr std::size_t getIdx(std::size_t addr) {
 			if (addr == RegAddr<HEAD>()) {
@@ -35,9 +35,9 @@ namespace regmap::memoizer {
 	struct MemoHolder<IDX, HEAD> {
 		RegType<HEAD> value;
 
-		constexpr void* getPtr(std::size_t addr) {
-			if (addr == RegAddr<HEAD>()) {
-				return (void*)&value;
+		constexpr void* getPtr(std::size_t idx) {
+			if (idx == IDX) {
+				return reinterpret_cast<void*>(&value);
 			}
 			return nullptr;
 		}
@@ -65,9 +65,6 @@ namespace regmap::memoizer {
 		MemoHolder<0, REGS...> memos;
 		bitset<NUM_MEMOIZED> regSeen = {0};
 
-		constexpr void* getPtr(std::size_t addr) {
-			return memos.getPtr(addr);
-		}
 		constexpr std::size_t getIdx(std::size_t addr) {
 			return memos.getIdx(addr);
 		}
@@ -81,6 +78,9 @@ namespace regmap::memoizer {
 		}
 		void setSeen(std::size_t idx) {
 			bitset_set(regSeen, idx);
+		}
+		constexpr void* getPtr(std::size_t idx) {
+			return memos.getPtr(idx);
 		}
 	};
 
