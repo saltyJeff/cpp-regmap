@@ -19,7 +19,8 @@ DECLR_REG(WHOAMI, 0x00, uint8_t)
 ```
 This defines a register named `WHOAMI` located at address 0, with size `uint8_t`.
 A convenience macro is provided: `DECLR_BYTE(NAME, ADDR)` which is just
-`DECLR_REG(NAME, ADDR, uint8_t)`.
+`DECLR_REG(NAME, ADDR, uint8_t)`. For 0-size registers, you can use 
+`DECLR_CMD(NAME, VALUE)`, which is useful for no-response commands.
 
 ## 3. Declare your masks:
 Some variables are not given an entire byte, but instead only get a subfield of bits.
@@ -32,9 +33,11 @@ DECLR_MASK(REVISION, WHOAMI, 3, 0)
 ```
 
 ## 4. Define your register map
-Your register map will define the device you wish to abstract. The class `Regmap<E, M...>`
+Your register map will define the device you wish to abstract. The class `Regmap<E, R, M...>`
 takes in 2 type parameters:
 * `E`: The endianness of the device. Set to either `endian::big` or `endian::little`.
+* `R`: The width of each register's address. Each register can have different sizes, but they
+must be addressed with the same-width bus.
 * `M...`: A list of registers you would like memoized. 
 
 Memoization stores the value of a register each time you read from it or write to it. 
@@ -49,7 +52,7 @@ perform the transactions, and a `deviceId` to identify the different instances o
 I'll define `Regmap` as follows:
 ```c++
 // In practice, you should supply a bus instead of nullptr
-Regmap<endian::big, WHOAMI, ANOTHER_REGISTER, BLAH_BLAH> regmap(nullptr, 0);
+Regmap<endian::big, uint8_t, WHOAMI, ANOTHER_REGISTER, BLAH_BLAH> regmap(nullptr, 0);
 ```
 Interaction is compile-time optimized to provide a small stack footprint,
 but somewhat larger binaries. You can read and write entire registers
