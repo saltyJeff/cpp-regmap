@@ -18,19 +18,20 @@ namespace regmap {
 	 * @tparam REG_TYPE the type of the register. This may not be the same
 	 * as an integer of REG_WIDTH in case of 24-bit values
 	 */
-	template<std::size_t ADDR, std::size_t REG_WIDTH>
+	template<std::size_t ADDR, std::size_t ADDR_WIDTH, std::size_t REG_WIDTH>
 	struct Register {
+		static constexpr std::size_t AddrWidth = ADDR_WIDTH;
 		static constexpr std::size_t RegWidth = REG_WIDTH;
 		static constexpr std::size_t addr = ADDR;
 	};
 	/**
 	 * Convenience alias to Register
 	 */
-	template<std::size_t ADDR, typename REG_TYPE>
-	using Reg = std::enable_if_t<!std::is_void_v<REG_TYPE>, Register<ADDR, sizeof(REG_TYPE)>>;
+	template<typename ADDR_TYPE, ADDR_TYPE ADDR, typename REG_TYPE>
+	using Reg = std::enable_if_t<!std::is_void_v<REG_TYPE>, Register<ADDR, sizeof(ADDR_TYPE), sizeof(REG_TYPE)>>;
 
-	template<std::size_t ADDR>
-	using Cmd = Register<ADDR, 0>;
+	template<typename ADDR_TYPE, std::size_t ADDR>
+	using Cmd = Register<ADDR, sizeof(ADDR_TYPE), 0>;
 
 	/**
 	 * Defines a mask of an existing register
@@ -45,7 +46,8 @@ namespace regmap {
 		static constexpr uint8_t MaskLow = MASK_LOW;
 	};
 }
-#define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Reg<ADDR, SZ>;
+
+#define DECLR_REG( NAME, ADDR_TYPE, ADDR, SZ ) using NAME = regmap::Reg<ADDR_TYPE, ADDR, SZ>;
 #define DECLR_MASK( NAME, REG, HIGH, LOW ) using NAME = regmap::RegMask<REG, HIGH, LOW>;
-#define DECLR_CMD( NAME, ADDR ) using NAME = regmap::Cmd<ADDR>;
-#define DECLR_BYTE( NAME, ADDR ) using NAME = regmap::Reg<ADDR, uint8_t>;
+#define DECLR_CMD( NAME, ADDR_TYPE, ADDR ) using NAME = regmap::Cmd<ADDR_TYPE, ADDR>;
+#define DECLR_BYTE( NAME, ADDR ) using NAME = regmap::Reg<uint8_t, ADDR, uint8_t>;

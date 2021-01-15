@@ -4,7 +4,7 @@
 TEST_SUITE_BEGIN("regmap");
 
 DummyBus bus;
-Regmap<endian::big, uint8_t, ONE_REG, TWENTY_FOUR> testMap(&bus, 0);
+Regmap<endian::big, ONE_REG, TWENTY_FOUR> testMap(&bus, 0);
 
 TEST_CASE("Reading and writing is correct") {
 	uint8_t tmp;
@@ -77,7 +77,7 @@ TEST_CASE("Endianness is applied") {
 
 	uint8_t msb;
 	// the low byte should be the MSB
-	testMap.read<Reg<0x10, uint8_t>>(msb);
+	testMap.read<Reg<uint8_t, 0x10, uint8_t>>(msb);
 	CHECK(msb == 0x47);
 }
 

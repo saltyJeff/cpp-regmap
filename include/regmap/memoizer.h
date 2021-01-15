@@ -50,6 +50,7 @@ namespace regmap::memoizer {
 	};
 	// zero-memoizer. Everything is constexpr return false
 	struct ZeroMemoizer {
+		static constexpr std::size_t NUM_MEMOIZED = 0;
 		constexpr void* getPtr(std::size_t addr) { return nullptr; }
 		constexpr std::size_t getIdx(std::size_t addr) { return 0; }
 

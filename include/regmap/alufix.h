@@ -144,8 +144,9 @@ namespace alufix {
 	 * @tparam N The width of the integer in bytes
 	 * @param value The value you want to fix
 	 */
-	template<endian ENDIANNESS, std::size_t N>
-	inline void fixEndianness(ALUType<N> &value) {
+	template<endian ENDIANNESS, typename T>
+	inline void fixEndianness(T &value) {
+		constexpr std::size_t N = sizeof(T);
 		static_assert(N == 1 || N == 2 || N == 4 || N == 8,
 			"Register addresses must be 1,2,4, or 8 bytes wide");
 		if constexpr (ENDIANNESS == endian::native) {

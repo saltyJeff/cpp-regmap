@@ -7,9 +7,9 @@ using namespace regmap;
 
 DECLR_BYTE(ZERO_REG, 0)
 DECLR_BYTE(ONE_REG, 1)
-DECLR_CMD(EMPTY_REG, 2)
-DECLR_REG(WORD_REG, 0x10, uint16_t)
-DECLR_REG(TWENTY_FOUR, 0x24, uint24_t)
+DECLR_CMD(EMPTY_REG, uint8_t, 2)
+DECLR_REG(WORD_REG, uint8_t, 0x10, uint16_t)
+DECLR_REG(TWENTY_FOUR, uint8_t, 0x24, uint24_t)
 
 /* Define test register masks */
 DECLR_MASK(WORD_BYTE_H, WORD_REG, 15, 8)

@@ -12,8 +12,9 @@ namespace regmap {
 		return REG::RegWidth;
 	}
 	template<typename REG>
+	using RegAddrType = alufix::types::ALUType<REG::AddrWidth>;
+	template<typename REG>
 	using RegType = alufix::types::ALUType<REG::RegWidth>; // cannot have intermediate constexpr calls
-
 
 	/** Define member accessors for RegMask **/
 	template <typename MASK>
