@@ -31,8 +31,14 @@ namespace regmap {
 			return privRead<RegType<REG>>(RegAddr<REG>(), dest);
 		}
 		template<typename REG>
-		int write(RegType<REG> value) {
+		typename std::enable_if_t<!std::is_same_v<RegType<REG>, void>, int>
+	    write(RegType<REG> value) {
 			return privWrite<RegType<REG>>(RegAddr<REG>(), value);
+		}
+		template<typename REG>
+		typename std::enable_if_t<std::is_same_v<RegType<REG>, void>, int>
+		write() {
+			return bus->write(devAddr, RegAddr<REG>(), nullptr, 0);
 		}
 		// the following are templated of masks
 		template<typename HEAD, typename ...REST>

@@ -13,7 +13,8 @@ namespace regmap {
 	template<reg_addr_t reg_addr, typename reg_size>
 	struct Register {
 		static_assert(
-			std::is_integral<reg_size>::value,
+			std::is_integral_v<reg_size>
+			|| std::is_void_v<reg_size>,
 			// || std::is_same<reg_size, uint24_t>::value, deal with dumb 24bit stuff later
 			"Registers must be backed by integer values");
 		static constexpr reg_addr_t addr = reg_addr;
@@ -99,3 +100,4 @@ namespace regmap {
 #define DECLR_REG( NAME, ADDR, SZ ) using NAME = regmap::Register<ADDR, SZ>;
 #define DECLR_BYTE( NAME, ADDR ) using NAME = regmap::Register<ADDR, uint8_t>;
 #define DECLR_MASK( NAME, REG, HIGH, LOW ) using NAME = regmap::RegMask<REG, HIGH, LOW>;
+#define DECLR_CMD( NAME, ADDR ) using NAME = regmap::Register<ADDR, void>;

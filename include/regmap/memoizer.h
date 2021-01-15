@@ -83,21 +83,7 @@ namespace regmap {
 		}
 	};
 
-	// utility class to pick which memoizer is applicable
-	template<bool B, typename ...REGS>
-	struct MemoizerPicker{};
-
-	template<>
-	struct MemoizerPicker<true> {
-		using type = ZeroMemoizer;
-	};
-
-	template<typename ...REGS>
-	struct MemoizerPicker<false, REGS...> {
-		using type = NMemoizer<REGS...>;
-	};
-
 	// the final memoizer definition
 	template<typename...REGS>
-	using Memoizer = typename MemoizerPicker<sizeof...(REGS) == 0, REGS...>::type;
+	using Memoizer = typename TypeTernary<sizeof...(REGS) == 0, ZeroMemoizer, NMemoizer<REGS...>>::type;
 }

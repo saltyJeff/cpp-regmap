@@ -53,4 +53,18 @@ namespace regmap {
 	maximum(T const &first, Rest const &... rest) {
 		return minmax::do_max(first, rest...);
 	}
+
+	// ternary type: select type b ? T1 : T2
+	template<bool B, typename T1, typename T2>
+	struct TypeTernary{};
+
+	template<typename T1, typename T2>
+	struct TypeTernary<true, T1, T2> {
+		using type = T1;
+	};
+
+	template<typename T1, typename T2>
+	struct TypeTernary<false, T1, T2> {
+		using type = T2;
+	};
 }

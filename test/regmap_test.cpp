@@ -15,6 +15,10 @@ TEST_CASE("Reading and writing is correct") {
 	CHECK(tmp == 0x69);
 }
 
+TEST_CASE("Zero-size regs work") {
+	testMap.write<EMPTY_REG>();
+}
+
 TEST_CASE("Bitmasking is applied") {
 	uint8_t tmp;
 	testMap.read<ZERO_REG>(tmp);

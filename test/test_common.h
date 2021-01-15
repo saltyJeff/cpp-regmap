@@ -8,6 +8,7 @@ using namespace regmap;
 /* Define test registers */
 DECLR_BYTE(ZERO_REG, 0)
 DECLR_BYTE(ONE_REG, 1)
+DECLR_REG(EMPTY_REG, 2, void)
 DECLR_REG(WORD_REG, 0x10, uint16_t)
 
 /* Define test register masks */
