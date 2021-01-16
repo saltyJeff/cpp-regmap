@@ -1,11 +1,14 @@
 # Usage Guide (probablhy outdated)
 
 ## 1. Declare your bus:
-See [bus.h](include/regmap/bus.h) for the interface you need to
-implement. This is intrinsically linked to your hardware (maybe
-your device uses UART, I2C, or SPI). For an I2C device, the
-lower 10 bits of `deviceAddr` could be the I2C address, and for
-an SPI device, it could be the chip-select pin.
+See [regmap.h](include/regmap/regmap.h) for the interface you need to
+implement:
+```
+int deviceRead()
+int deviceWrite()
+```
+This is intrinsically linked to your hardware (maybe
+your device uses UART, I2C, or SPI).
 
 Make sure that your functions return a negative number on error.
 This convention is adopted by the rest of the library.
@@ -51,8 +54,7 @@ perform the transactions, and a `deviceId` to identify the different instances o
 ## 5. Interact with the register map
 I'll define `Regmap` as follows:
 ```c++
-// In practice, you should supply a bus instead of nullptr
-Regmap<endian::big, uint8_t, WHOAMI, ANOTHER_REGISTER, BLAH_BLAH> regmap(nullptr, 0);
+Regmap<endian::big, uint8_t, WHOAMI, ANOTHER_REGISTER, BLAH_BLAH> regmap;
 ```
 Interaction is compile-time optimized to provide a small stack footprint,
 but somewhat larger binaries. You can read and write entire registers
