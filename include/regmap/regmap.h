@@ -1,7 +1,6 @@
 #pragma once
 #include "register.h"
 #include "register_utils.h"
-#include "bus.h"
 #include <cstdint>
 #include "alufix.h"
 #include "memoizer.h"
@@ -15,6 +14,7 @@ namespace regmap {
 	 * An implementation of a register map.
 	 *
 	 * @tparam ENDIAN the endianness of the device
+	 * @tparam REG_ADDR the type of each register's address
 	 * @tparam MEMOIZED registers to memoize. Make sure that there are no duplicates in this register!
 	 */
 	template<endian ENDIAN,
@@ -22,12 +22,8 @@ namespace regmap {
 		typename... MEMOIZED>
 	class Regmap {
 	public:
-		static constexpr uint8_t REG_WIDTH = sizeof(REG_ADDR);
+		static constexpr uint8_t REG_ADDR_WIDTH = sizeof(REG_ADDR);
 		memoizer::Memoizer<MEMOIZED...> memoized;
-		DeviceAddr devAddr;
-		Bus *bus;
-
-		Regmap(Bus *bus, DeviceAddr addr): bus(bus), devAddr(addr) {}
 
 		/**
 		 * Read a register
@@ -113,22 +109,24 @@ namespace regmap {
 		bool isMemoized() {
 			return memoized.isMemoized(memoized.getIdx(RegAddr<REG>()));
 		}
-
+		virtual ~Regmap() = default;
+	protected:
 		/*
 		 * The following are direct implementations of regmap reading & writing.
+		 * **LOTS OF PITFALLS**, so they're marked protected
 		 * *in the case where num is odd, make sure the void*'s can access num+1 bytes*
 		 * *when writing, your incoming pointer will be scrambled*
 		 * Beware: No type safety for you
 		 */
 		int directRead(REG_ADDR regAddr, void* dest, std::size_t num) {
-			fixEndianness<ENDIAN, REG_WIDTH>(regAddr);
+			fixEndianness<ENDIAN, REG_ADDR_WIDTH>(regAddr);
 			auto memoIdx = memoized.getIdx(regAddr);
 			if(memoized.isMemoized(memoIdx) && memoized.isSeen(memoIdx)) {
 				alufix::memcpy(dest, memoized.getPtr(memoIdx), num);
 				return 0;
 			}
 			auto *destPtr = reinterpret_cast<uint8_t*>(dest);
-			auto r = bus->read(devAddr, reinterpret_cast<uint8_t*>(&regAddr), REG_WIDTH, destPtr, num);
+			auto r = deviceRead(regAddr, destPtr, num);
 			if(r < 0) {
 				return r;
 			}
@@ -140,10 +138,10 @@ namespace regmap {
 			return 0;
 		}
 		int directWrite(REG_ADDR regAddr, void* src, std::size_t num) {
-			fixEndianness<ENDIAN, REG_WIDTH>(regAddr);
+			fixEndianness<ENDIAN, REG_ADDR_WIDTH>(regAddr);
 			uint8_t toSend[num];
 			alufix::toDeviceFormat<ENDIAN>(src, toSend, num);
-			int r = bus->write(devAddr, reinterpret_cast<uint8_t*>(&regAddr), REG_WIDTH, toSend, num);
+			int r = deviceWrite(regAddr, toSend, num);
 			if(r < 0) {
 				return r;
 			}
@@ -154,5 +152,11 @@ namespace regmap {
 			}
 			return 0;
 		}
+
+		/*
+		 * The following is for actually performing the transactions
+		 */
+		virtual int deviceRead(REG_ADDR addr, uint8_t *dest, uint8_t num) = 0;
+		virtual int deviceWrite(REG_ADDR addr, uint8_t *src, uint8_t num) = 0;
 	};
 }

@@ -1,4 +1,4 @@
-# Usage Guide
+# Usage Guide (probablhy outdated)
 
 ## 1. Declare your bus:
 See [bus.h](include/regmap/bus.h) for the interface you need to

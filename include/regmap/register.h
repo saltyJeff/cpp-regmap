@@ -16,7 +16,7 @@ namespace regmap {
 	 * @tparam ADDR the address of the register
 	 * @tparam REG_WIDTH the width of the register
 	 * @tparam REG_TYPE the type of the register. This may not be the same
-	 * as an integer of REG_WIDTH in case of 24-bit values
+	 * as an integer of REG_ADDR_WIDTH in case of 24-bit values
 	 */
 	template<std::size_t ADDR, std::size_t REG_WIDTH>
 	struct Register {

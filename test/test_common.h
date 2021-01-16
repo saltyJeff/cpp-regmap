@@ -24,7 +24,7 @@ DECLR_MASK(HIGH_BIT, ONE_REG, 7, 7);
 
 DECLR_MASK(TWENTY_FOUR_HIGH, TWENTY_FOUR, 23, 16)
 
-class DummyBus: public Bus {
+class DummyBus {
 public:
 	int readAccesses = 0;
 	int writeAccesses = 0;
@@ -32,7 +32,7 @@ public:
 	uint16_t wordMem[4] = {2, 4, 6, 8};
 	uint24_t twentyFourMem;
 
-	constexpr uint8_t *resolveAddr(uint16_t regAddr) {
+	constexpr uint8_t *resolveAddr(uint8_t regAddr) {
 		if(0 <= regAddr && regAddr < 4) {
 			return &byteMem[regAddr];
 		}
@@ -45,23 +45,36 @@ public:
 		return nullptr;
 	}
 
-	int read(DeviceAddr deviceAddr, uint8_t *regPtr, uint8_t regWidth, uint8_t *dest, uint8_t num) override {
-		uint8_t *addr = resolveAddr(*regPtr);
-		if(addr == nullptr) {
+	int read(uint8_t regAddr, uint8_t *dest, uint8_t num) {
+		uint8_t *reg = resolveAddr(regAddr);
+		if(reg == nullptr) {
 			return -1;
 		}
-		memcpy(dest, addr, num);
+		memcpy(dest, reg, num);
 		readAccesses++;
 		return 0;
 	}
-	int write(DeviceAddr deviceAddr, uint8_t *regPtr, uint8_t regWidth, uint8_t *src, uint8_t num) override {
-		uint8_t *addr = resolveAddr(*regPtr);
-		if(addr == nullptr) {
+	int write(uint8_t regAddr, uint8_t *src, uint8_t num) {
+		uint8_t *reg = resolveAddr(regAddr);
+		if(reg == nullptr) {
 			return -1;
 		}
-		memcpy(addr, src, num);
+		memcpy(reg, src, num);
 		writeAccesses++;
 		return 0;
 	}
-	~DummyBus() override = default;
+	~DummyBus() = default;
+};
+
+class TestRegmap: public Regmap<endian::big, uint8_t, ONE_REG, TWENTY_FOUR> {
+public:
+	DummyBus bus;
+
+	int deviceRead(uint8_t regAddr, uint8_t *src, uint8_t num) override {
+		return bus.read(regAddr, src, num);
+	}
+
+	int deviceWrite(uint8_t regAddr, uint8_t *src, uint8_t num) override {
+		return bus.write(regAddr, src, num);
+	}
 };

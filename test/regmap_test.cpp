@@ -3,8 +3,7 @@
 
 TEST_SUITE_BEGIN("regmap");
 
-DummyBus bus;
-Regmap<endian::big, uint8_t, ONE_REG, TWENTY_FOUR> testMap(&bus, 0);
+TestRegmap testMap;
 
 TEST_CASE("Reading and writing is correct") {
 	uint8_t tmp;
@@ -31,9 +30,9 @@ TEST_CASE("Bitmasking is applied") {
 TEST_CASE("Mask merging") {
 	uint8_t value = 0x55;
 	testMap.write<ZERO_REG>(value);
-	uint8_t writes = bus.writeAccesses;
+	uint8_t writes = testMap.bus.writeAccesses;
 	testMap.write<HIGH_NIBBLE, LOW_NIBBLE>(0x2, 0x1);
-	CHECK(bus.writeAccesses == writes + 1);
+	CHECK(testMap.bus.writeAccesses == writes + 1);
 	testMap.read<ZERO_REG>(value);
 	CHECK(value == 0x21);
 
@@ -46,7 +45,7 @@ TEST_CASE("Mask merging") {
 TEST_CASE("Memoization occurs") {
 	CHECK(testMap.isMemoized<ZERO_REG>() == false);
 	CHECK(testMap.isMemoized<ONE_REG>() == true);
-	int startReads = bus.readAccesses;
+	int startReads = testMap.bus.readAccesses;
 	uint8_t tmp;
 	/* check for proper memoization of ONE_REG when:
 	 * Reading the whole register for the first time
@@ -54,16 +53,16 @@ TEST_CASE("Memoization occurs") {
 	 * Reading a bitmask (should be masked-out from memory)
 	 */
 	testMap.read<ONE_REG>(tmp);
-	CHECK(bus.readAccesses - startReads == 1);
+	CHECK(testMap.bus.readAccesses - startReads == 1);
 	testMap.read<ONE_REG>(tmp);
-	CHECK(bus.readAccesses - startReads == 1);
+	CHECK(testMap.bus.readAccesses - startReads == 1);
 	testMap.write<LOW_BIT>(5);
-	CHECK(bus.readAccesses - startReads == 1);
+	CHECK(testMap.bus.readAccesses - startReads == 1);
 
 	/* check that writes are not memoized */
-	int startWrites = bus.writeAccesses;
+	int startWrites = testMap.bus.writeAccesses;
 	testMap.write<ONE_REG>(5);
-	CHECK(bus.writeAccesses - startWrites == 1);
+	CHECK(testMap.bus.writeAccesses - startWrites == 1);
 }
 
 TEST_CASE("Endianness is applied") {
